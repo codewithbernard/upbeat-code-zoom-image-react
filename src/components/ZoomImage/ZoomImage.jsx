@@ -1,10 +1,24 @@
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useMemo, useEffect, useState } from "react";
+
+const SCROLL_SENSITIVITY = 0.0005;
+const MAX_ZOOM = 5;
+const MIN_ZOOM = 0.1;
 
 const ZoomImage = ({ image }) => {
+  const [zoom, setZoom] = useState(1);
+
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const observer = useRef(null);
   const background = useMemo(() => new Image(), [image]);
+
+  const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
+  const handleWheel = (event) => {
+    setZoom(
+      clamp(zoom + event.deltaY * SCROLL_SENSITIVITY, MIN_ZOOM, MAX_ZOOM)
+    );
+  };
 
   useEffect(() => {
     observer.current = new ResizeObserver((entries) => {
@@ -38,16 +52,19 @@ const ZoomImage = ({ image }) => {
         const { width, height } = background;
         canvasRef.current.width = width;
         canvasRef.current.height = height;
+        const context = canvasRef.current.getContext("2d");
+
+        context.scale(zoom, zoom);
 
         // Set image as background
-        canvasRef.current.getContext("2d").drawImage(background, 0, 0);
+        context.drawImage(background, 0, 0);
       };
     }
-  }, [background]);
+  }, [background, zoom]);
 
   return (
     <div ref={containerRef}>
-      <canvas ref={canvasRef} />
+      <canvas onWheel={handleWheel} ref={canvasRef} />
     </div>
   );
 };
