@@ -15,9 +15,28 @@ const ZoomImage = ({ image }) => {
   const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 
   const handleWheel = (event) => {
-    setZoom(
-      clamp(zoom + event.deltaY * SCROLL_SENSITIVITY, MIN_ZOOM, MAX_ZOOM)
+    const { deltaY } = event;
+    setZoom((zoom) =>
+      clamp(zoom + deltaY * SCROLL_SENSITIVITY * -1, MIN_ZOOM, MAX_ZOOM)
     );
+  };
+
+  const draw = () => {
+    if (canvasRef.current) {
+      const { width, height } = background;
+      const context = canvasRef.current.getContext("2d");
+
+      // Set canvas dimensions
+      canvasRef.current.width = width;
+      canvasRef.current.height = height;
+
+      // Clear canvas and scale it
+      context.clearRect(0, 0, width, height);
+      context.scale(zoom, zoom);
+
+      // Draw image
+      context.drawImage(background, 0, 0);
+    }
   };
 
   useEffect(() => {
@@ -52,15 +71,16 @@ const ZoomImage = ({ image }) => {
         const { width, height } = background;
         canvasRef.current.width = width;
         canvasRef.current.height = height;
-        const context = canvasRef.current.getContext("2d");
-
-        context.scale(zoom, zoom);
 
         // Set image as background
-        context.drawImage(background, 0, 0);
+        canvasRef.current.getContext("2d").drawImage(background, 0, 0);
       };
     }
-  }, [background, zoom]);
+  }, [background]);
+
+  useEffect(() => {
+    draw();
+  }, [zoom]);
 
   return (
     <div ref={containerRef}>
