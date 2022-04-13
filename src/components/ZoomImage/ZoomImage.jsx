@@ -23,7 +23,7 @@ const ZoomImage = ({ image }) => {
 
   const draw = () => {
     if (canvasRef.current) {
-      const { width, height } = background;
+      const { width, height } = canvasRef.current;
       const context = canvasRef.current.getContext("2d");
 
       // Set canvas dimensions
@@ -31,11 +31,15 @@ const ZoomImage = ({ image }) => {
       canvasRef.current.height = height;
 
       // Clear canvas and scale it
-      context.clearRect(0, 0, width, height);
       context.scale(zoom, zoom);
+      context.clearRect(0, 0, width, height);
+
+      // Make sure we're zooming to the center
+      const x = (context.canvas.width / zoom - background.width) / 2;
+      const y = (context.canvas.height / zoom - background.height) / 2;
 
       // Draw image
-      context.drawImage(background, 0, 0);
+      context.drawImage(background, x, y);
     }
   };
 
