@@ -5,8 +5,11 @@ const MAX_ZOOM = 5;
 const MIN_ZOOM = 0.1;
 
 const ZoomImage = ({ image }) => {
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [draggind, setDragging] = useState(false);
 
+  const touch = useRef({ x: 0, y: 0 });
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const observer = useRef(null);
@@ -16,10 +19,32 @@ const ZoomImage = ({ image }) => {
 
   const handleWheel = (event) => {
     const { deltaY } = event;
-    setZoom((zoom) =>
-      clamp(zoom + deltaY * SCROLL_SENSITIVITY * -1, MIN_ZOOM, MAX_ZOOM)
-    );
+    if (!draggind) {
+      setZoom((zoom) =>
+        clamp(zoom + deltaY * SCROLL_SENSITIVITY * -1, MIN_ZOOM, MAX_ZOOM)
+      );
+    }
   };
+
+  const handleMouseMove = (event) => {
+    if (draggind) {
+      const { x, y } = touch.current;
+      const { clientX, clientY } = event;
+      setOffset({
+        x: offset.x + (x - clientX),
+        y: offset.y + (y - clientY),
+      });
+      touch.current = { x: clientX, y: clientY };
+    }
+  };
+
+  const handleMouseDown = (event) => {
+    const { clientX, clientY } = event;
+    touch.current = { x: clientX, y: clientY };
+    setDragging(true);
+  };
+
+  const handleMouseUp = () => setDragging(false);
 
   const draw = () => {
     if (canvasRef.current) {
@@ -31,6 +56,7 @@ const ZoomImage = ({ image }) => {
       canvasRef.current.height = height;
 
       // Clear canvas and scale it
+      context.translate(-offset.x, -offset.y);
       context.scale(zoom, zoom);
       context.clearRect(0, 0, width, height);
 
@@ -84,11 +110,17 @@ const ZoomImage = ({ image }) => {
 
   useEffect(() => {
     draw();
-  }, [zoom]);
+  }, [zoom, offset]);
 
   return (
     <div ref={containerRef}>
-      <canvas onWheel={handleWheel} ref={canvasRef} />
+      <canvas
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onWheel={handleWheel}
+        onMouseMove={handleMouseMove}
+        ref={canvasRef}
+      />
     </div>
   );
 };
